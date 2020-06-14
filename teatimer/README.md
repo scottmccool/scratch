@@ -1,13 +1,16 @@
 # TeaTimer
 
 ## Overview
+
 A test project to learn go and the Coba CLI framework
 
 ## Specifications
+
 * CLI application to start, show, and cancel a timer.
 * Should be pub-nub'able in the future
 
 Example Usage:
+
 ```bash
  $ ./teatimer help
 ----
@@ -24,8 +27,9 @@ cancel: Cancel any active timer
 ```
 
 Use [Cobra](https://github.com/spf13/cobra) CLI framework:
+
 ```bash
-$ go get -u github.com/spf13/cobra/cobra
-$ asdf reshim golang
-$ cobra --init --pkg-name teatimer -a "Scott McCool" --viper
+go get -u github.com/spf13/cobra/cobra
+asdf reshim golang
+cobra --init --pkg-name teatimer -a "Scott McCool" --viper
 ```
