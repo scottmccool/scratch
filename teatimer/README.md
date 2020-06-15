@@ -31,5 +31,15 @@ Use [Cobra](https://github.com/spf13/cobra) CLI framework:
 ```bash
 go get -u github.com/spf13/cobra/cobra
 asdf reshim golang
-cobra --init --pkg-name teatimer -a "Scott McCool" --viper
+//go mod init tea-timer-app
+cobra init --pkg-name tea-timer-app -a "Scott McCool"
+cobra add start
+go run main.go start
+//go install tea-timer-app
+
 ```
+
+
+## References
+[1] https://github.com/spf13/cobra
+[2] https://towardsdatascience.com/how-to-create-a-cli-in-golang-with-cobra-d729641c7177
