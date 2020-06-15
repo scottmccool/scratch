@@ -21,6 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kyokomi/emoji"
+
 	"time"
 )
 
@@ -40,7 +42,7 @@ var startCmd = &cobra.Command{
 		if err == nil {
 			fmt.Println("Starting a timer for ", sTime)
 			time.Sleep(sTime)
-			fmt.Println("Your tea is ready!")
+			emoji.Println(":heart: :coffee: Your tea is ready!  :coffee:  :heart: ")
 			return
 		} else {
 			log.Println(err)
