@@ -4,29 +4,26 @@ import "fmt"
 
 // Start activates a BLE scanner which will grab fujitsu packets from BLE beacons
 func Start() {
-	fmt.Println("Starting publisher thread")
-	fmt.Println("Starting analyzer thread")
-	fmt.Println("Starting scanner thread")
+	fmt.Println("Starting publisher thread for analyzed events")
+	fmt.Println("Starting analyzer thread for scanned events")
+	fmt.Println("Starting scanner thread to do the bluetooth things!")
 }
 
-// Scans for a fuji env reading packet every X seconds
+// Scans for a env reading packet every X seconds
 func scan(interval int) {
-
+	// every interval seconds, scan bt for a matching packet
 }
 
 // Accumulates env readings from scanner
 // Filter env readings and publish them
 func analyze() {
-
+	// Accumulate readings from scanner, find interesting events
+	// For a batch of N readings, see if occupied changes from true or false and fire that as a different event
+	// At N readings, publish to firehose
 }
 
 // Publishes a batch of analyzed readings up to the cloud for archival and broader analysis
 func publish() {
-
-}
-
-// grabBLEPacket activates the BLE interface and reads one broadcast packet from fujitsu sensors
-// Returns a CreyonPayload
-func grabBLEPacket() {
-	// Grab a set of env readings
+	// Read from firehose and events channels
+	// Publish to corresponding pubnub channels
 }
