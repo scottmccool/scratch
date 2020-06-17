@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-const scanWaitT = 1 * time.Second    // Pause this long after getting a packet, save bt radio time
-const analyzeBatchSize = 3           // Get this many readings before publishing
-const pubFrequency = 5 * time.Second // Publish off hub this frequently
+const scanWaitT = 1 * time.Second     // Pause this long after getting a packet, save bt radio time
+const analyzeBatchSize = 30           // Get this many readings before publishing
+const pubFrequency = 10 * time.Second // Publish off hub this frequently
 
 // Start activates a BLE scanner which will grab fujitsu packets from BLE beacons
 func Start() {
@@ -24,11 +24,15 @@ func Start() {
 	}()
 
 	// And another to read from scanner and do on-hub processing before publish
-	go analyze(rawc, analyzedc)
+	go func() {
+		for now := range time.Tick(1 * time.Second) {
+			_ = now
+			analyze(rawc, analyzedc)
+		}
+	}()
 
 	// main thread scans for packets which it'll pass to analyzer
 	// TODO: Gotta be a more elegant way to do this!
-
 	go func() {
 		for {
 			start := time.Now()
@@ -47,36 +51,47 @@ func Start() {
 
 // Scans for a env reading packet up to X seconds; return first match
 func scan() string {
-	fmt.Println("faking it")
+	//fmt.Println("faking it")
 	return "{\"mock\": true, \"timestamp\": \"" + time.Now().String() + "\"}"
 }
 
 // Analyzes batches of readings
 // May perform event detection (occupancy) or filtering
-// Publishes any readings or signals one by one to analyzedc
-func analyze(rawc chan string, analyzedc chan string) { // TODO This needs to loop until full.
-	var readings [analyzeBatchSize]string
-	for i := 0; i < analyzeBatchSize; i++ {
-		fmt.Println("Reading it")
+// For now just pass through, we will practice batching in publish
+func analyze(rawc chan string, analyzedc chan string) {
+	if len(rawc) < analyzeBatchSize {
+		return // Not enough readings to analyze, try again later
+	}
+
+	// Read everything a batch
+	var readings []string
+	for len(readings) < analyzeBatchSize {
 		select {
 		case reading := <-rawc:
-			readings[i] = reading
+			readings = append(readings, reading)
 		default:
 			time.Sleep(1 * time.Second)
 		}
 	}
 
-	// we have a batch, just publish it
-	for _, s := range readings {
-		analyzedc <- s
+	// Analyze them!
+
+	// Publish them
+	for reading := range readings {
+		analyzedc <- readings[reading]
 	}
 }
 
+// Publish analyzed readings to the cloud
+// For now, just to stdout.
+// Non-blocking, fired by timer should read all available and publish
 func publish(analyzedc chan string) {
-	select {
-	case reading := <-analyzedc:
-		fmt.Println("Publishing: ", reading)
-	default:
-		return
+	for {
+		select {
+		case reading := <-analyzedc:
+			fmt.Println("Publishing: ", reading)
+		default:
+			return
+		}
 	}
 }
