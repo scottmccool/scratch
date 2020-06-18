@@ -2,16 +2,17 @@ package hub
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
-const scanWaitT = 1 * time.Second     // Pause this long after getting a packet, save bt radio time
-const analyzeBatchSize = 30           // Get this many readings before publishing
-const pubFrequency = 10 * time.Second // Publish off hub this frequently
+const scanWaitT = 1 * time.Second    // Pause this long after getting a packet, save bt radio time
+const analyzeBatchSize = 2           // Get this many readings before publishing
+const pubFrequency = 5 * time.Second // Publish off hub this frequently
 
 // Start activates a BLE scanner which will grab fujitsu packets from BLE beacons
 func Start() {
-	fmt.Println("Scanning every ", scanWaitT, ", analyzing batches of ", analyzeBatchSize, " and publishing every ", pubFrequency)
+	log.Printf("Scanning for Fuji tags every %v, publishing to cloud every %v after analysis in batches of %v\n", scanWaitT, analyzeBatchSize, pubFrequency)
 	rawc := make(chan string, 50)      // readings from scanner to analyzer; buffered just in case analysis takes 10*ScanWait_t sec
 	analyzedc := make(chan string, 50) // analyzer to publisher; buffered as publish may lag if we are conserving radio
 
@@ -51,8 +52,9 @@ func Start() {
 
 // Scans for a env reading packet up to X seconds; return first match
 func scan() string {
-	//fmt.Println("faking it")
-	return "{\"mock\": true, \"timestamp\": \"" + time.Now().String() + "\"}"
+	//return "{\"mock\": true, \"timestamp\": \"" + time.Now().String() + "\"}"
+	reading := ScanFuji()
+	return reading
 }
 
 // Analyzes batches of readings
@@ -69,8 +71,8 @@ func analyze(rawc chan string, analyzedc chan string) {
 		select {
 		case reading := <-rawc:
 			readings = append(readings, reading)
-		default:
-			time.Sleep(1 * time.Second)
+			//		default:
+			//			time.Sleep(1 * time.Second)
 		}
 	}
 
