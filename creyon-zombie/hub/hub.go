@@ -41,7 +41,7 @@ func Start() {
 			elapsed := time.Since(start)
 			sleept := scanWaitT - elapsed
 			if sleept > 0 {
-				//fmt.Println("Scan took ", elapsed, ".  Sleeping ", sleept.Seconds(), " for next scan")
+				fmt.Println("Scan took ", elapsed, ".  Sleeping ", sleept.Seconds(), " for next scan")
 				time.Sleep(sleept)
 			}
 		}

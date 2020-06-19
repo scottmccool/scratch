@@ -6,21 +6,15 @@ package hub
 // TODO Badly needs refactored, this is a poc using copied code as I learn the language.
 
 import (
+	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
-
-	//"strconv"
-
-	//	"encoding/hex"
-
-	//	"strings"
 
 	"github.com/paypal/gatt"
 	"github.com/paypal/gatt/examples/option"
 )
-
-//var tag_readings map[string][string]
 
 // ScanFuji - Scan BTLE for a Fujitsu beacon, return it as a payload
 func ScanFuji() string {
@@ -48,89 +42,78 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	}
 }
 
-//        # getScanData returns a tripple from the ScanEntry object
-//# the tripple has the advertising type, description and value (adtype, desc, value)
-//triples = bleAdvertisement.getScanData()
-//# Bluetooth defines AD types https://ianharvey.github.io/bluepy-doc/scanentry.html
-//# DREAM only wants adtype = 0xff (0d255) for manufacturer data
-//# values is a list where the last element is the manufacturer data
-//values = [value for (adtype, desc, value) in triples if adtype == 255]
-
-//strconv.FormatInt(255, 16))
 func onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	//x := hex.Dump(a.ManufacturerData)
-	x := hex.EncodeToString(a.ManufacturerData)
-	//hDataLittle := strconv.FormatUint(binary.LittleEndian.Uint64(a.ManufacturerData))
-	//hDataBig := strconv.FormatUint(binary.BigEndian.Uint64(a.ManufacturerData))
+	//	reading, err := makeFujiTag()
+	fmt.Println("------------------------------")
+	printAdData(p, a, rssi)
+	//	reading, err := makeFujiTag(p, a, rssi)
+	//	if err != nil {
+	//		fmt.Println("Not a fujitsu tag")
+	//	} else {
+	//		fmt.Println("Found a fuji tag reading: ", reading)
+	//	}
+}
+
+//type Advertisement struct {
+//LocalName        string
+//ManufacturerData []byte
+//ServiceData      []ServiceData
+//Services         []UUID
+//OverflowService  []UUID
+//TxPowerLevel     int
+//Connectable      bool
+//SolicitedService []UUID
+
+func printAdData(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+
+	var flipped []byte
+	vendorStringBytes := []byte("10003000300")
 	fmt.Printf("\nPeripheral ID:%s, NAME:(%s)\n", p.ID(), p.Name())
+	fmt.Printf("\n-----\n%+v\n----\n", a)
 	fmt.Println("  Local Name        =", a.LocalName)
 	fmt.Println("  TX Power Level    =", a.TxPowerLevel)
-	fmt.Println("  Manufacturer Data =", a.ManufacturerData)
-	fmt.Println("    munged: ", x)
+	fmt.Println("  Manufacturer Data =", hex.EncodeToString(a.ManufacturerData))
+	if len(a.ManufacturerData) >= len(vendorStringBytes) {
+		for _, bit := range a.ManufacturerData {
+			flipped = append(flipped, ^bit)
+		}
+		fmt.Println("** May be a fuji packet **")
+		fmt.Println("              Raw: ", a.ManufacturerData)
+		fmt.Println("          Flipped: ", flipped)
+		fmt.Println("              Hex: ", hex.EncodeToString(a.ManufacturerData))
+		fmt.Println(bytes.Split(a.ManufacturerData, []byte(":")))
+		fmt.Println(bytes.Split(flipped, []byte(":")))
+		fmt.Println("          Flipped: ", hex.EncodeToString(flipped))
+		fmt.Println("** End Fuji details **")
+	}
 	fmt.Println("  Service Data      =", a.ServiceData)
 }
 
 // FBeacon - a Fujitsu tag
 type FBeacon struct {
 	rawData string
+	flipped string
 	//uuid  string
 	//major uint16
 	//minor uint16
 }
 
-//Here is the python filter
-
-//PACKET_DATA_REGEX = re.compile(r'010003000300(?P<temperature>.{4})(?P<x_acc>.{4})(?P<y_acc>.{4})(?P<z_acc>.{4})$')
-
-//def decode(packet_hex_string):
-//    match = re.search(PACKET_DATA_REGEX, packet_hex_string or '')
-//    if not match:
-//        return None
-//    hex_temperature = match.group('temperature')
-//    hex_x_acc = match.group('x_acc')
-//    hex_y_acc = match.group('y_acc')
-//    hex_z_acc = match.group('z_acc')
-//
-//    packet = {
-//        'temperature': _compute_temperature(hex_temperature),
-//        'x_acc': _compute_acceleration(hex_x_acc),
-//        'y_acc': _compute_acceleration(hex_y_acc),
-//        'z_acc': _compute_acceleration(hex_z_acc)
-//    }
-//    return packet
-//
-
-//def buildPacketFromBle(bleAdvertisement,hci):
-//    packet = None
-//    try:
-//        # get the tag_id (MAC address) and rssi from the BLE advertisement
-//        # since the MAC address comes with colons, remove them.
-//        tag_id = bleAdvertisement.addr.replace(':', '')
-//        rssi = bleAdvertisement.rssi
-//
-//        # getScanData returns a tripple from the ScanEntry object
-//        # the tripple has the advertising type, description and value (adtype, desc, value)
-//        triples = bleAdvertisement.getScanData()
-//        # Bluetooth defines AD types https://ianharvey.github.io/bluepy-doc/scanentry.html
-//        # DREAM only wants adtype = 0xff (0d255) for manufacturer data
-//        # values is a list where the last element is the manufacturer data
-//        values = [value for (adtype, desc, value) in triples if adtype == 255]
-//
-//        # TODO: why are we only looking at the last msg recorded?
-//        measurements = fujitsu_decoder.decode(values[-1])
-//        if measurements is None:
-//            return None
-//        packet = {
-//            "readingType": "bluetooth_fujitsu",
-//            "timestamp": int(time.time()),
-//            "tag_id": tag_id,
-//            "hci": hci,
-//            "rssi": rssi,
-//            "measurements": measurements
-//        }
-//    except Exception:
-//        # If there's a unicode error, disregard it since it isn't a Fujitsu Tag
-//        #print("Discarding on Unicode error (non Fujitsu)")
-//        return None
-//    return packet
-//
+// makeFujiTag
+// A fujitsu tag packet as read by gatt looks like this:
+//p.ID(): E2:94:B4:AF:93:13
+//p.Name():
+//a.LocalName:
+// a.TxPowerLevel: 0
+// hex.EncodeToString(a.ManufacturerData): 590001000300030034065bfbb1febb06
+//                                           59000100030003007F03A503C4FFA907
+//    (Flipped:                            a6fffefffcfffcffcbf9a4044e0144f9)
+// a.ServiceData: []
+func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) (FBeacon, error) {
+	var reading FBeacon
+	vendorStringBytes := []byte("5900010003000300")
+	if bytes.Equal(vendorStringBytes, a.ManufacturerData[0:len(vendorStringBytes)]) {
+		reading.rawData = hex.EncodeToString(a.ManufacturerData)
+		return reading, nil
+	}
+	return reading, errors.New("not a Fujitsu tag")
+}
