@@ -2,12 +2,15 @@
 
 Reimplement creyon in go?
 
-hub.go :
-  scan -- Every X seconds, read bt and decode fujitsu data; publish to (buffered) channel
-  analyze -- Read scanner results from channel until payload size is reached; filter and pass to publisher
-  publish -- Read a payload from recorder (set of records) and publish it to pubnub environmental data channel
+Reads environmental data from a Fujitsu BLE tag.
 
-Data "accumulates" in analyze.  It should be able to write unpublished readings to stdout on graceful shutdown; it should suicide at MAXUNPUBLISHEDREADINGS
+hub.go:
+  Manage three main threads of execution:
+    *fuji_tag_scanner.go -- Scans btle, finds fuji beacons and extracts the data into a simple struct, passes along to analyzer
+    * analyzer.go -- Reads a batch of readings, filters or modifies them, and sends them on to publisher
+    * publisher.go -- For now, this just prints some interesting stuff about the tag readings to stdout
 
-analysis.go
-  Subscribe to environmental data, update datadog chart or publish to slack or whatever
+Channels are used to form a basic data pipeline
+  ~~btle radio waves~~ --> fuji_tag_scanner --> analyzer --> publisher
+
+Batching and cost optimization (battery, connectivity, cloud) not yet implemented, but would be done by adjusting batch sizes and timer frequencies.

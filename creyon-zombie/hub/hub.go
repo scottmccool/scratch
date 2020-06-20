@@ -19,25 +19,32 @@ type FBeacon struct {
 	timestamp    time.Time
 }
 
-const scanWaitT = 1 * time.Second    // Pause this long after getting a packet, save bt radio time
-const analyzeBatchSize = 2           // Get this many readings before publishing
-const pubFrequency = 5 * time.Second // Publish off hub this frequently
+// stringer for observations
+func (o FBeacon) String() string {
+	// metadata, Temp:value, Acc:value
+	return fmt.Sprintf("(%v):[%v](%v), Temp: %v, Acc: (%v, %v, %v)", o.timestamp.Format(time.Stamp), o.addr, o.rssi, o.temp, o.xAcc, o.yAcc, o.zAcc)
+	//	return fmt.Sprintf("%v (%v years)", p.Name, p.Age)
+}
 
-// BT handler needs to communicate; simplest to export the channels
-var Rawc = make(chan FBeacon, 100)
+// How frequently we sniff and publish sensor packets
+const analyzeMinBatchSize = 1        // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
+const pubFrequency = 1 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
+
+// Rawc channel for sniffer to analzyer communications
+var Rawc = make(chan FBeacon, 1000)
+
+// Analyzedc channel for analyzer to publisher communications
 var Analyzedc = make(chan FBeacon, 50)
 
-// Start activates three worker routines (scanner, analyzer, publisher)
+// HubStart Manage three worker routines (scanner, analyzer, publisher)
 func Start() {
-	log.Printf("Scanning for Fuji tags every %v, publishing to cloud every %v after analysis in batches of %v\n", scanWaitT, analyzeBatchSize, pubFrequency)
-	//rawc := make(chan string, 50)      // readings from scanner to analyzer; buffered just in case analysis takes 10*ScanWait_t sec
-	//analyzedc := make(chan string, 50) // analyzer to publisher; buffered as publish may lag if we are conserving radio
+	log.Printf("Scanning for Fuji sensor tags; analyzing in batches of %v and publishing (printing) every %v\n", analyzeMinBatchSize, pubFrequency)
 
 	// Start a routine to publish analyzed readings
 	go func() {
 		for now := range time.Tick(pubFrequency) {
 			_ = now
-			publish()
+			Publish()
 		}
 	}()
 
@@ -45,7 +52,7 @@ func Start() {
 	go func() {
 		for now := range time.Tick(1 * time.Second) {
 			_ = now
-			analyze()
+			Analyze()
 		}
 	}()
 
@@ -54,65 +61,8 @@ func Start() {
 	// For now assume scanner will exit and we want to wait at least scanWaitT between BLE radio activation
 	go func() {
 		for {
-			start := time.Now()
-			scan() // No real timer logic implemented yet
-			elapsed := time.Since(start)
-			sleept := scanWaitT - elapsed
-			if sleept > 0 {
-				fmt.Println("Scan took ", elapsed, ".  Sleeping ", sleept.Seconds(), " for next scan")
-				time.Sleep(sleept)
-			}
+			ScanFuji() // Activate bluetooth for scanT time
 		}
 	}()
 	select {} // block forever
-}
-
-// Scans for a env reading packet up to X seconds; return first match
-func scan() {
-	//return "{\"mock\": true, \"timestamp\": \"" + time.Now().String() + "\"}"
-	ScanFuji()
-}
-
-// Analyzes batches of readings
-// May perform event detection (occupancy) or filtering
-// For now just pass through, we will practice batching in publish
-func analyze() { //rawc chan string, analyzedc chan string) {
-	if len(Rawc) < analyzeBatchSize {
-		return // Not enough readings to analyze, try again later
-	}
-
-	// Read batchSize beacon entries
-	var readings []FBeacon
-	for len(readings) < analyzeBatchSize {
-		select {
-		case reading := <-Rawc:
-			readings = append(readings, reading)
-		default:
-			time.Sleep(1 * time.Second) // Not enough there, let's wait a tick
-		}
-	}
-
-	// Analyze them!
-
-	// Publish them
-	for reading := range readings {
-		Analyzedc <- readings[reading]
-	}
-}
-
-// Publish analyzed readings to the cloud
-// For now, just to stdout.
-// Non-blocking, fired by timer should read all available and publish
-func publish() { //analyzedc chan string) {
-	for {
-		select {
-		case obs := <-Analyzedc:
-			fmt.Println("(not publishing) Fuji sensor reading")
-			fmt.Printf("Timestamp: %v Addr: %v (Rssi: %v)\n", obs.timestamp.String(), obs.addr, obs.rssi)
-			fmt.Printf("  Raw: %v\n", obs.rawMfrData)
-			fmt.Printf("  Temp: %v\n  xAcc: %v yAcc: %v zAcc: %v\n", obs.temp, obs.xAcc, obs.yAcc, obs.zAcc)
-		default:
-			return
-		}
-	}
 }

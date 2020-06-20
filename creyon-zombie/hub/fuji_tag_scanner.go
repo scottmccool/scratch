@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/paypal/gatt"
@@ -41,7 +42,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	switch s {
 	case gatt.StatePoweredOn:
 		fmt.Println("scanning...")
-		d.Scan([]gatt.UUID{}, true)
+		d.Scan([]gatt.UUID{}, true) // Ignore second ad from a given device; assumes we are being externally activated to snatch at given resolution.
 		return
 	default:
 		d.StopScanning()
@@ -63,10 +64,10 @@ func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	hexMfr := hex.EncodeToString(a.ManufacturerData)
 	pkt := re.FindStringSubmatch(hexMfr)
 	if len(pkt) == 5 { // 0 always empty
-		obs.temp = calcTemp(fujiHexToFloat(pkt[1]))
-		obs.xAcc = calcAcc(fujiHexToFloat(pkt[2]))
-		obs.yAcc = calcAcc(fujiHexToFloat(pkt[3]))
-		obs.zAcc = calcAcc(fujiHexToFloat(pkt[4]))
+		obs.temp = calcTemp(fujiHexToUInt(pkt[1]))
+		obs.xAcc = calcAcc(fujiHexToUInt(pkt[2]))
+		obs.yAcc = calcAcc(fujiHexToUInt(pkt[3]))
+		obs.zAcc = calcAcc(fujiHexToUInt(pkt[4]))
 		obs.addr = p.ID()
 		obs.txPowerLevel = a.TxPowerLevel
 		obs.rawMfrData = hexMfr
@@ -80,23 +81,29 @@ func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 // Flip bits so that c401 becomes 01c4
 // Use binary package to create Uint16 from flipped bits
 // Cast to float32 and return
-func fujiHexToFloat(hval string) float32 {
-	flipped := make([]byte, 4)
-	b, _ := hex.DecodeString(hval)
-	fmt.Printf("Input: %v, Decoded: %v\n\n", hval, b)
-	flipped[0] = b[2]
-	flipped[1] = b[3]
-	flipped[2] = b[0]
-	flipped[3] = b[1]
-	return float32(binary.BigEndian.Uint16(flipped))
+func fujiHexToUInt(hval string) uint16 {
+	//orig_bytes, _ := hex.DecodeString(hval)
+	chars := strings.Split(hval, "")
+	flipped := make([]string, 4)
+	flipped[0] = chars[2]
+	flipped[1] = chars[3]
+	flipped[2] = chars[0]
+	flipped[3] = chars[1]
+	flippedS := strings.Join(flipped, "")
+	hFlipped, _ := hex.DecodeString(flippedS)
+	rv := binary.BigEndian.Uint16(hFlipped)
+	//fmt.Printf("RV: %v from Flipped %v(%v) to %v(%v)\n", rv, hval, orig_bytes, flipped_s, h_flipped)
+	return rv
 }
 
-func calcTemp(raw float32) float32 {
-	return (((raw / 333.87) + 21.0) * 9.0 / 5.0) + 32
+func calcTemp(raw uint16) float32 {
+	f := float32(raw)
+	return (((f / 333.87) + 21.0) * 9.0 / 5.0) + 32
 }
 
-func calcAcc(raw float32) float32 {
-	return raw / 2048.0
+func calcAcc(raw uint16) float32 {
+	f := float32(raw)
+	return f / 2048.0
 }
 
 //obs.xAcc = float32(binary.BigEndian.Uint16([]byte(pkt[2])) / 2048.0)
