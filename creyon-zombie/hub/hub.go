@@ -14,6 +14,7 @@ type FBeacon struct {
 	zAcc         float32
 	addr         string
 	txPowerLevel int
+	rssi         int
 	rawMfrData   []byte
 	timestamp    time.Time
 }
@@ -23,10 +24,10 @@ const analyzeBatchSize = 2           // Get this many readings before publishing
 const pubFrequency = 5 * time.Second // Publish off hub this frequently
 
 // BT handler needs to communicate; simplest to export the channels
-var Rawc = make(chan FBeacon, 500)
-var Analyzedc = make(chan FBeacon, 500)
+var Rawc = make(chan FBeacon, 100)
+var Analyzedc = make(chan FBeacon, 50)
 
-// Start activates a BLE scanner which will grab fujitsu packets from BLE beacons
+// Start activates three worker routines (scanner, analyzer, publisher)
 func Start() {
 	log.Printf("Scanning for Fuji tags every %v, publishing to cloud every %v after analysis in batches of %v\n", scanWaitT, analyzeBatchSize, pubFrequency)
 	//rawc := make(chan string, 50)      // readings from scanner to analyzer; buffered just in case analysis takes 10*ScanWait_t sec
@@ -40,7 +41,7 @@ func Start() {
 		}
 	}()
 
-	// And another to read from scanner and do on-hub processing before publish
+	// And another to read from scanner and do on-hub processing before publish, once a second
 	go func() {
 		for now := range time.Tick(1 * time.Second) {
 			_ = now
@@ -50,6 +51,7 @@ func Start() {
 
 	// main thread scans for packets which it'll pass to analyzer
 	// TODO: Gotta be a more elegant way to do this!
+	// For now assume scanner will exit and we want to wait at least scanWaitT between BLE radio activation
 	go func() {
 		for {
 			start := time.Now()
@@ -62,7 +64,6 @@ func Start() {
 			}
 		}
 	}()
-
 	select {} // block forever
 }
 
@@ -80,14 +81,14 @@ func analyze() { //rawc chan string, analyzedc chan string) {
 		return // Not enough readings to analyze, try again later
 	}
 
-	// Read everything a batch
+	// Read batchSize beacon entries
 	var readings []FBeacon
 	for len(readings) < analyzeBatchSize {
 		select {
 		case reading := <-Rawc:
 			readings = append(readings, reading)
-			//		default:
-			//			time.Sleep(1 * time.Second)
+		default:
+			time.Sleep(1 * time.Second) // Not enough there, let's wait a tick
 		}
 	}
 
@@ -106,7 +107,7 @@ func publish() { //analyzedc chan string) {
 	for {
 		select {
 		case reading := <-Analyzedc:
-			fmt.Printf("Publishing sensor reading:\n%+v", reading)
+			fmt.Printf("(not publishing) Fuji sensor reading:\n%+v", reading)
 		default:
 			return
 		}
