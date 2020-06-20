@@ -63,9 +63,9 @@ func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	pkt := re.FindStringSubmatch(hexMfr)
 	if len(pkt) == 5 { // 0 always empty
 		obs.temp = float32((((float32(binary.LittleEndian.Uint16([]byte(pkt[1]))) / 333.87) + 21.0) * 9.0 / 5.0) + 32)
-		obs.xAcc = float32(binary.LittleEndian.Uint16([]byte(pkt[2])) / 2048.0)
-		obs.yAcc = float32(binary.LittleEndian.Uint16([]byte(pkt[2])) / 2048.0)
-		obs.zAcc = float32(binary.LittleEndian.Uint16([]byte(pkt[2])) / 2048.0)
+		obs.xAcc = float32(binary.BigEndian.Uint16([]byte(pkt[2])) / 2048.0)
+		obs.yAcc = float32(binary.BigEndian.Uint16([]byte(pkt[3])) / 2048.0)
+		obs.zAcc = float32(binary.BigEndian.Uint16([]byte(pkt[4])) / 2048.0)
 		obs.addr = p.ID()
 		obs.txPowerLevel = a.TxPowerLevel
 		obs.rawMfrData = a.ManufacturerData

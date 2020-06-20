@@ -106,8 +106,10 @@ func analyze() { //rawc chan string, analyzedc chan string) {
 func publish() { //analyzedc chan string) {
 	for {
 		select {
-		case reading := <-Analyzedc:
-			fmt.Printf("(not publishing) Fuji sensor reading:\n%+v", reading)
+		case obs := <-Analyzedc:
+			fmt.Println("(not publishing) Fuji sensor reading")
+			fmt.Printf("Timestamp: %v Addr: %v (Rssi: %v)\n", obs.timestamp.String(), obs.addr, obs.rssi)
+			fmt.Printf("  Temp: %v\n  xAcc: %v yAcc: %v zAcc: %v\n", obs.temp, obs.xAcc, obs.yAcc, obs.zAcc)
 		default:
 			return
 		}
