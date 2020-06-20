@@ -7,17 +7,20 @@ package hub
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
+	"time"
 
 	"github.com/paypal/gatt"
 	"github.com/paypal/gatt/examples/option"
 )
 
 // ScanFuji - Scan BTLE for a Fujitsu beacon, return it as a payload
-func ScanFuji() string {
+func ScanFuji() {
 	//	return "Mock-reading"
 	d, err := gatt.NewDevice(option.DefaultClientOptions...)
 	if err != nil {
@@ -45,25 +48,13 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 func onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	reading, err := makeFujiTag(p, a, rssi)
 	if err != nil {
-		fmt.Println("ID: ", p.ID(), "Error: ", err)
+		fmt.Println("ID: ", p.ID(), "Msg: ", err)
 		//		fmt.Printf("ID: %s __not a fuji tag__\n", p.ID())
 	} else {
-		fmt.Println("***  Found Fuji Tag ***")
-		fmt.Printf("%+v \n", reading)
-		fmt.Println("***************")
-		//		rawc <- reading
+		Rawc <- reading
+		fmt.Printf("Grabbed fuji packet from %v, sleeping 1 second\n", p.ID())
+		time.Sleep(1 * time.Second)
 	}
-}
-
-// FBeacon - a Fujitsu tag
-type FBeacon struct {
-	hexString       string
-	tagId           string
-	rawData         []byte
-	readingsOnlyHex string
-	//uuid  string
-	//major uint16
-	//minor uint16
 }
 
 // makeFujiTag
@@ -71,22 +62,32 @@ type FBeacon struct {
 //p.ID(): E2:94:B4:AF:93:13
 //p.Name():
 //a.LocalName:
-// a.TxPowerLevel: 0
 // hex.EncodeToString(a.ManufacturerData): 590001000300030034065bfbb1febb06
-// a.ServiceData: []
+
+//We care about adv type 255 manufacturer data, the following regex from python code shows format
+//PACKET_DATA_REGEX = re.compile(r'010003000300(?P<temperature>.{4})(?P<x_acc>.{4})(?P<y_acc>.{4})(?P<z_acc>.{4})$')
+// Bytes need flipped
+// Temp formula from fuji: (((_unpack_value(_flip_bytes(hex_temperature)) / 333.87) + 21.0) * 9.0 / 5.0) + 32
+// Acc formula from fuji: _unpack_value(_flip_bytes(hex_accel)) / 2048.0
+//def _flip_bytes(hex_bytes):
+//  return ''.join(map(lambda pr: ''.join(pr), each_slice(2, list(hex_bytes)))[::-1])
 func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) (FBeacon, error) {
-	var reading FBeacon
-	vendorString, _ := hex.DecodeString("5900010003000300") // MfrData starts with this for our tags
-	if len(vendorString) <= len(a.ManufacturerData) {
-		if bytes.Equal(vendorString, a.ManufacturerData[0:len(vendorString)]) {
-			reading.rawData = a.ManufacturerData
-			reading.hexString = hex.EncodeToString(a.ManufacturerData)
-			reading.tagId = p.ID()
-			reading.readingsOnlyHex = hex.EncodeToString(a.ManufacturerData[len(a.ManufacturerData)-len(vendorString):])
-			return reading, nil
-		}
+	var obs FBeacon
+	re := regexp.MustCompile(`010003000300(?P<temperature>.{4})(?P<x_acc>.{4})(?P<y_acc>.{4})(?P<z_acc>.{4})$`)
+	hexMfr := hex.EncodeToString(a.ManufacturerData)
+	pkt := re.FindStringSubmatch(hexMfr)
+	if len(pkt) == 5 { // 0 always empty
+		obs.temp = float32((((float32(binary.LittleEndian.Uint32([]byte(pkt[1]))) / 333.87) + 21.0) * 9.0 / 5.0) + 32)
+		obs.xAcc = float32(binary.LittleEndian.Uint32([]byte(pkt[2])) / 2048.0)
+		obs.yAcc = float32(binary.LittleEndian.Uint32([]byte(pkt[2])) / 2048.0)
+		obs.zAcc = float32(binary.LittleEndian.Uint32([]byte(pkt[2])) / 2048.0)
+		obs.addr = p.ID()
+		obs.txPowerLevel = a.TxPowerLevel
+		obs.rawMfrData = a.ManufacturerData
+		obs.timestamp = time.Now()
+		return obs, nil
 	}
-	return reading, errors.New("Not a fuji tag")
+	return obs, errors.New("Not a fujitsu beacon")
 }
 
 // Used for reverse engineering ble ads
