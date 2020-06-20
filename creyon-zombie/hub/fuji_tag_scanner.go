@@ -8,7 +8,7 @@ package hub
 // https://github.com/muka/go-bluetooth
 
 // TODO Badly needs refactored, this is a poc using copied code as I learn the language.
-// The fuji math is probably wrong
+// The fuji math is probably wrong in an ugly way.
 
 import (
 	"encoding/binary"
@@ -79,8 +79,8 @@ func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 
 // Turn a 4 byte hex string from the advertisement to a float32
 // Flip bits so that c401 becomes 01c4
-// Use binary package to create Uint16 from flipped bits
-// Cast to float32 and return
+// Use binary package to create Uint16 from flipped bits (//TODO verify this and encoding)
+// Cast to float32 and return for inclusion in an FBeacon
 func fujiHexToUInt(hval string) uint16 {
 	//orig_bytes, _ := hex.DecodeString(hval)
 	chars := strings.Split(hval, "")
@@ -96,16 +96,14 @@ func fujiHexToUInt(hval string) uint16 {
 	return rv
 }
 
+// calcTemp convert a decoeded raw vlue into temperature(f) using Fuji-provided math
 func calcTemp(raw uint16) float32 {
 	f := float32(raw)
 	return (((f / 333.87) + 21.0) * 9.0 / 5.0) + 32
 }
 
+// calcAcc convert a decoded raw value into an accelerometer reading using Fuji-provided math
 func calcAcc(raw uint16) float32 {
 	f := float32(raw)
 	return f / 2048.0
 }
-
-//obs.xAcc = float32(binary.BigEndian.Uint16([]byte(pkt[2])) / 2048.0)
-//obs.yAcc = float32(binary.BigEndian.Uint16([]byte(pkt[3])) / 2048.0)
-//obs.zAcc = float32(binary.BigEndian.Uint16([]byte(pkt[4])) / 2048.0)

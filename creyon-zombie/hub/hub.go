@@ -23,7 +23,6 @@ type FBeacon struct {
 func (o FBeacon) String() string {
 	// metadata, Temp:value, Acc:value
 	return fmt.Sprintf("(%v):[%v](%v), Temp: %v, Acc: (%v, %v, %v)", o.timestamp.Format(time.Stamp), o.addr, o.rssi, o.temp, o.xAcc, o.yAcc, o.zAcc)
-	//	return fmt.Sprintf("%v (%v years)", p.Name, p.Age)
 }
 
 // How frequently we sniff and publish sensor packets
@@ -36,7 +35,7 @@ var Rawc = make(chan FBeacon, 1000)
 // Analyzedc channel for analyzer to publisher communications
 var Analyzedc = make(chan FBeacon, 50)
 
-// HubStart Manage three worker routines (scanner, analyzer, publisher)
+// Start Manage three worker routines (scanner, analyzer, publisher)
 func Start() {
 	log.Printf("Scanning for Fuji sensor tags; analyzing in batches of %v and publishing (printing) every %v\n", analyzeMinBatchSize, pubFrequency)
 
@@ -57,8 +56,6 @@ func Start() {
 	}()
 
 	// main thread scans for packets which it'll pass to analyzer
-	// TODO: Gotta be a more elegant way to do this!
-	// For now assume scanner will exit and we want to wait at least scanWaitT between BLE radio activation
 	go func() {
 		for {
 			ScanFuji() // Activate bluetooth for scanT time

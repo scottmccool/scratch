@@ -1,12 +1,12 @@
 package hub
 
+// Publish analyzed readings to the cloud
+
 import (
 	"fmt"
 )
 
-// Publish analyzed readings to the cloud
-// For now, just to stdout.
-// publish() Reads from chan Analyzedc and publishes off hub (well, to stdout)
+// Publish() Reads from chan Analyzedc and publishes off hub (well, to stdout)
 func Publish() {
 	for {
 		select {
