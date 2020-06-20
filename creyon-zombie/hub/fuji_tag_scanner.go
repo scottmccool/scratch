@@ -38,7 +38,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	switch s {
 	case gatt.StatePoweredOn:
 		fmt.Println("scanning...")
-		d.Scan([]gatt.UUID{}, false)
+		d.Scan([]gatt.UUID{}, true)
 		return
 	default:
 		d.StopScanning()
@@ -48,12 +48,11 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 func onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	reading, err := makeFujiTag(p, a, rssi)
 	if err != nil {
-		fmt.Println("ID: ", p.ID(), "Msg: ", err)
+		//		fmt.Println("ID: ", p.ID(), "Msg: ", err)
 		//		fmt.Printf("ID: %s __not a fuji tag__\n", p.ID())
 	} else {
 		Rawc <- reading
 		fmt.Printf("Grabbed fuji packet from %v, sleeping 1 second\n", p.ID())
-		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -77,10 +76,10 @@ func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) (FBeacon, e
 	hexMfr := hex.EncodeToString(a.ManufacturerData)
 	pkt := re.FindStringSubmatch(hexMfr)
 	if len(pkt) == 5 { // 0 always empty
-		obs.temp = float32((((float32(binary.LittleEndian.Uint32([]byte(pkt[1]))) / 333.87) + 21.0) * 9.0 / 5.0) + 32)
-		obs.xAcc = float32(binary.LittleEndian.Uint32([]byte(pkt[2])) / 2048.0)
-		obs.yAcc = float32(binary.LittleEndian.Uint32([]byte(pkt[2])) / 2048.0)
-		obs.zAcc = float32(binary.LittleEndian.Uint32([]byte(pkt[2])) / 2048.0)
+		obs.temp = float32((((float32(binary.LittleEndian.Uint16([]byte(pkt[1]))) / 333.87) + 21.0) * 9.0 / 5.0) + 32)
+		obs.xAcc = float32(binary.LittleEndian.Uint16([]byte(pkt[2])) / 2048.0)
+		obs.yAcc = float32(binary.LittleEndian.Uint16([]byte(pkt[2])) / 2048.0)
+		obs.zAcc = float32(binary.LittleEndian.Uint16([]byte(pkt[2])) / 2048.0)
 		obs.addr = p.ID()
 		obs.txPowerLevel = a.TxPowerLevel
 		obs.rawMfrData = a.ManufacturerData

@@ -106,7 +106,7 @@ func publish() { //analyzedc chan string) {
 	for {
 		select {
 		case reading := <-Analyzedc:
-			fmt.Println("Publishing: ", reading)
+			fmt.Printf("Publishing sensor reading:\n%+v", reading)
 		default:
 			return
 		}
