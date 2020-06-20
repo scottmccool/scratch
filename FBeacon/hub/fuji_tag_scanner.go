@@ -55,8 +55,6 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 // Temp formula from fuji: (((_unpack_value(_flip_bytes(hex_temperature)) / 333.87) + 21.0) * 9.0 / 5.0) + 32
 //   So: hex_temp=c401 raw, flip the bytes to 01c4, cast it to an int16 (return 2^^16-val if exceeds), then do the math above results in t_f=72.2368
 // Acc formula from fuji: _unpack_value(_flip_bytes(hex_accel)) / 2048.0
-//def _flip_bytes(hex_bytes):
-//  return ''.join(map(lambda pr: ''.join(pr), each_slice(2, list(hex_bytes)))[::-1])
 // makeFujiTag() Builds a FBeacon object with decoded data from a tag.  Writes it to channel.
 func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	var obs FBeacon

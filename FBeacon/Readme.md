@@ -1,6 +1,23 @@
-# Creyon
+# FBeacon scanner
 
-Reimplement creyon in go?
+## Usage
+
+```bash
+go install
+
+# consider adding 2> /dev/null to avoid weird data lines
+sudo -e FBeacon
+```
+
+or
+
+```bash
+go run main.go
+```
+
+from this directory.
+
+## Background
 
 Reads environmental data from a Fujitsu BLE tag.
 

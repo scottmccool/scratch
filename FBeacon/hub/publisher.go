@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// Publish() Reads from chan Analyzedc and publishes off hub (well, to stdout)
+// Publish Reads from chan Analyzedc and publishes off hub (well, to stdout)
 func Publish() {
 	for {
 		select {

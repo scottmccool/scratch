@@ -1,4 +1,4 @@
-module creyon-zombie
+module FBeacon
 
 go 1.14
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"creyon-zombie/hub"
+	"FBeacon/hub"
 )
 
 func main() {
