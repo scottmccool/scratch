@@ -15,7 +15,7 @@ type FBeacon struct {
 	addr         string
 	txPowerLevel int
 	rssi         int
-	rawMfrData   []byte
+	rawMfrData   string
 	timestamp    time.Time
 }
 
@@ -109,6 +109,7 @@ func publish() { //analyzedc chan string) {
 		case obs := <-Analyzedc:
 			fmt.Println("(not publishing) Fuji sensor reading")
 			fmt.Printf("Timestamp: %v Addr: %v (Rssi: %v)\n", obs.timestamp.String(), obs.addr, obs.rssi)
+			fmt.Printf("  Raw: %v\n", obs.rawMfrData)
 			fmt.Printf("  Temp: %v\n  xAcc: %v yAcc: %v zAcc: %v\n", obs.temp, obs.xAcc, obs.yAcc, obs.zAcc)
 		default:
 			return
