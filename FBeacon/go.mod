@@ -1,4 +1,4 @@
-module FBeacon
+module github.com/scottmccool/FBeacon
 
 go 1.14
 

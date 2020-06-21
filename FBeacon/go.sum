@@ -1,2 +1,4 @@
 github.com/paypal/gatt v0.0.0-20151011220935-4ae819d591cf h1:RHRtrMle1AlWsMdCoIQIbq7IB2y8/5qEsUoAzjCCSCw=
 github.com/paypal/gatt v0.0.0-20151011220935-4ae819d591cf/go.mod h1:+AwQL2mK3Pd3S+TUwg0tYQjid0q1txyNUJuuSmz8Kdk=
+github.com/scottmccool/scratch v0.0.0-20200620223147-ef7b77beac33 h1:ubUN1ogcURjm+chymbHOswTGX7bX42ErSVMuECpucEo=
+github.com/scottmccool/scratch/FBeacon v0.0.0-20200620223147-ef7b77beac33 h1:Pjk3EXsCwJmM3OF/syZtCvBrGfTDCjpZk/00z3qnEPg=

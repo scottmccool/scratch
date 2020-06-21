@@ -2,6 +2,7 @@ package hub
 
 // Includes logic to activate BLE and snatch fujitsu tag readings from the air.
 // Runs as it's own routine from hub.go and uses an exported channel to send readings to analysis routine.
+// Uses paypal's gatt for the btle heavy lifting, and barely customizes anything
 
 // https://towardsdatascience.com/spelunking-bluetooth-le-with-go-c2cff65a7aca
 // https://www.thepolyglotdeveloper.com/2018/02/scan-ble-ibeacon-devices-golang-raspberry-pi-zero-w/
@@ -19,9 +20,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/scottmccool/FBeacon/readings"
+
 	"github.com/paypal/gatt"
 	"github.com/paypal/gatt/examples/option"
 )
+
+type FBeacon struct {
+	*readings.FBeacon
+}
 
 // ScanFuji - Scan BTLE for a Fujitsu beacon, return it as a payload.  Entrypoint.
 func ScanFuji() {
@@ -57,20 +64,22 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 // Acc formula from fuji: _unpack_value(_flip_bytes(hex_accel)) / 2048.0
 // makeFujiTag() Builds a FBeacon object with decoded data from a tag.  Writes it to channel.
 func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	var obs FBeacon
+	var beacon FBeacon
 	re := regexp.MustCompile(`010003000300(?P<temperature>.{4})(?P<x_acc>.{4})(?P<y_acc>.{4})(?P<z_acc>.{4})$`)
 	hexMfr := hex.EncodeToString(a.ManufacturerData)
 	pkt := re.FindStringSubmatch(hexMfr)
 	if len(pkt) == 5 { // 0 always empty
-		obs.temp = calcTemp(fujiHexToUInt(pkt[1]))
-		obs.xAcc = calcAcc(fujiHexToUInt(pkt[2]))
-		obs.yAcc = calcAcc(fujiHexToUInt(pkt[3]))
-		obs.zAcc = calcAcc(fujiHexToUInt(pkt[4]))
-		obs.addr = p.ID()
-		obs.txPowerLevel = a.TxPowerLevel
-		obs.rawMfrData = hexMfr
+		&beacon.timestamp = time.Now()
 		obs.timestamp = time.Now()
-		obs.rssi = rssi
+		obs.bt_data.addr = p.ID()
+		obs.bt_data.rssi = rssi
+		obs.bt_data.rawMfrData = hexMfr
+		obs.bt_data.txPowerLevel = a.TxPowerLevel
+		obs.measurements.temp = calcTemp(fujiHexToUInt(pkt[1]))
+		obs.measurements.xAcc = calcAcc(fujiHexToUInt(pkt[2]))
+		obs.measurements.yAcc = calcAcc(fujiHexToUInt(pkt[3]))
+		obs.measurements.zAcc = calcAcc(fujiHexToUInt(pkt[4]))
+
 		Rawc <- obs // Publish to channel for analysis by rest of hub logic, we're done
 	}
 }

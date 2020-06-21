@@ -1,7 +1,7 @@
 package main
 
 import (
-	"FBeacon/hub"
+	"github.com/scottmccool/FBeacon/hub"
 )
 
 func main() {
