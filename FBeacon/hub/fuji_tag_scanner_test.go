@@ -5,7 +5,6 @@ import (
 )
 
 func TestextractFujiTag(t *testing.T) {
-
 }
 
 func TestFujiHexToUInt(t *testing.T) {
@@ -71,7 +70,7 @@ func TestCalcAcc(t *testing.T) {
 /*
 Test data:
 Warning, generated from implemention (;
---                                                                                                                                    010003000300
+--                                                                                                                          vendor    010003000300
 {"Timestamp":"2020-06-20T21:25:49.1262864-07:00","BtData":{"Addr":"E2:94:B4:AF:93:13","TxPowerLevel":0,"Rssi":-73,  "RawMfrData":"590001000300030044012c0011007b08"},"Measurements":{"Temp":71.54679,"XAcc":0.021484375,"YAcc":0.008300781,"ZAcc":1.0600586}}
 {"Timestamp":"2020-06-20T21:25:49.344215004-07:00","BtData":{"Addr":"D6:4F:DE:CF:63:99","TxPowerLevel":0,"Rssi":-77,"RawMfrData":"5900010003000300f5005e0018005208"},"Measurements":{"Temp":71.12087,"XAcc":0.045898438,"YAcc":0.01171875,"ZAcc":1.0400391}}
 {"Timestamp":"2020-06-20T21:25:50.132079399-07:00","BtData":{"Addr":"E2:94:B4:AF:93:13","TxPowerLevel":0,"Rssi":-70,"RawMfrData":"5900010003000300440132000f009a08"},"Measurements":{"Temp":71.54679,"XAcc":0.024414062,"YAcc":0.0073242188,"ZAcc":1.0751953}}
