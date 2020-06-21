@@ -22,14 +22,14 @@ func Publish() (published int, err error) {
 		}
 	}
 
-	gcloud_err := publishToGcloud(observations)
-	stdout_err := publishToStdOut(observations)
+	gcloudErr := publishToGcloud(observations)
+	stdoutErr := publishToStdOut(observations)
 
-	if gcloud_err != nil {
-		return len(observations), gcloud_err
+	if gcloudErr != nil {
+		return len(observations), gcloudErr
 	}
-	if stdout_err != nil {
-		return len(observations), stdout_err
+	if stdoutErr != nil {
+		return len(observations), stdoutErr
 	}
 	return len(observations), nil
 }

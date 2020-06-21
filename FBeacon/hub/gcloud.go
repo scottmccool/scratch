@@ -1,14 +1,48 @@
 package hub
 
+//  gcloud pubsub topics create fbeacon-raw
+// gcloud iam service-accounts create fbeacon-testing --description="FBeacon gcloud testing" --display-name="FBeacon-testing"
+//gcloud iam service-accounts keys create secrets/fbeacon-testing --iam-account fbeacon-testing@fbeacon.iam.gserviceaccount.com
+// grant it permissions
+
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"cloud.google.com/go/pubsub"
 	"github.com/scottmccool/FBeacon/readings"
 )
 
-// publishToGcloud Write a batch of records to pubsub topic
 func publishToGcloud(observations []readings.FBeacon) error {
-	// Write a slice of
-	// {"Timestamp":"2020-06-20T22:18:49.450340744-07:00","BtData":{"Addr":"E2:94:B4:AF:93:13","TxPowerLevel":0,"Rssi":-79,"RawMfrData":"59000100030003004401270010009308"},"Measurements":{"Temp":71.54679,"XAcc":0.019042969,"YAcc":0.0078125,"ZAcc":1.0717773}}
-	// to pubsub for drain to bigquery
+		projectID := "fbeacon"
+		topicID := "projects/fbeacon/topics/fbeacon-raw"
+		ctx := context.Background()
+		client, err := pubsub.NewClient(ctx, projectID)
+		if err != nil {
+						return fmt.Errorf("pubsub.NewClient: %v", err)
+		}
 
-	return nil
-}
+		t := client.Topic(topicID)
+		var results []*pubsub.PublishResult
+		for o := range observations {
+			j, _ := json.Marshal(observations[o])
+			r := t.Publish(ctx, &pubsub.Message{
+				Data: []byte(string(j)),
+			})
+			fmt.Println("** Published: ", string(j))
+			results = append(results, r)
+		}
+		time.Sleep(5 * time.Second)
+		for _, r := range results {
+			id, err := r.Get(ctx) // block until we get an ack
+			if err != nil {
+				fmt.Println("Error waiting on publish result: ", err)
+				return err
+				// TODO: Handle error.
+			}
+			fmt.Printf("Published a message with a message ID: %s\n", id)
+		}
+		return nil
+	}
