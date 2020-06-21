@@ -5,9 +5,8 @@ package hub
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/scottmccool/FBeacon/gcloud"
-	"github.com/scottmccool/FBeacon/readings"
 
+	"github.com/scottmccool/FBeacon/readings"
 )
 
 // Publish Reads from chan Analyzedc and publishes off hub (well, to stdout)
@@ -23,7 +22,7 @@ func Publish() (published int, err error) {
 		}
 	}
 
-	gcloud_err := gcloud.PublishToGcloud(observations)
+	gcloud_err := publishToGcloud(observations)
 	stdout_err := publishToStdOut(observations)
 
 	if gcloud_err != nil {
