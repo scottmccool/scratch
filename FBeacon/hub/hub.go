@@ -1,16 +1,15 @@
 package hub
 
 import (
+	"github.com/scottmccool/FBeacon/readings"
 	"log"
 	"time"
-
-	"github.com/scottmccool/FBeacon/readings"
 )
 
 // How frequently we sniff and publish sensor packets
-const analyzeMinBatchSize = 2        // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
-const pubFrequency = 5 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
-const pubMinBatchSize = 2            // Wait to accumulate MinBatchSize before publishing
+const analyzeMinBatchSize = 1        // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
+const pubFrequency = 1 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
+
 // Rawc channel for sniffer to analzyer communications
 var Rawc = make(chan readings.FBeacon, 1000)
 

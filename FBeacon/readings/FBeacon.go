@@ -1,11 +1,11 @@
 package readings
 
-// Our sensor data reading object(s)
-
 import (
 	"fmt"
 	"time"
 )
+
+// Our sensor data reading object(s)
 
 // FBeacon a fujitsu tag measuring temp, x_acc, y_acc, z_acc along with bluetooth metadata
 type FBeacon struct {
