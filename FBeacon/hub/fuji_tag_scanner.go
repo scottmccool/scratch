@@ -27,6 +27,10 @@ import (
 	"github.com/paypal/gatt/examples/option"
 )
 
+type FBeacon struct {
+	*readings.FBeacon
+}
+
 // ScanFuji - Scan BTLE for a Fujitsu beacon, return it as a payload.  Entrypoint.
 func ScanFuji() {
 	//	return "Mock-reading"

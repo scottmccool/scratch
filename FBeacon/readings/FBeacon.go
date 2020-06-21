@@ -31,5 +31,9 @@ type btData struct {
 // stringer for observations
 func (o FBeacon) String() string {
 	// metadata, Temp:value, Acc:value
+<<<<<<< HEAD
 	return fmt.Sprintf("(%v):[%v](%v), Temp: %v, Acc: (%v, %v, %v)", o.Timestamp.Format(time.Stamp), o.BtData.Addr, o.BtData.Rssi, o.Measurements.Temp, o.Measurements.XAcc, o.Measurements.YAcc, o.Measurements.ZAcc)
+=======
+	return fmt.Sprintf("(%v):[%v](%v), Temp: %v, Acc: (%v, %v, %v)", o.timestamp.Format(time.Stamp), o.bt_data.addr, o.bt_data.rssi, o.measurements.temp, o.measurements.xAcc, o.measurements.yAcc, o.measurements.zAcc)
+>>>>>>> 9b47655055a47faf961c28b60604a568da9330c8
 }
