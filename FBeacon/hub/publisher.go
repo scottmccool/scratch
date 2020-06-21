@@ -3,6 +3,7 @@ package hub
 // Publish analyzed readings to the cloud
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -11,7 +12,13 @@ func Publish() {
 	for {
 		select {
 		case obs := <-Analyzedc:
-			fmt.Println(obs)
+			//			fmt.Println(obs)
+			j, err := json.Marshal(obs)
+			if err != nil {
+				fmt.Println("Cannot publish:", obs)
+			} else {
+				fmt.Printf(string(j))
+			}
 		default:
 			return
 		}

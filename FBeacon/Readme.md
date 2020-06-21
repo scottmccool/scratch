@@ -1,5 +1,13 @@
 # FBeacon scanner
 
+## What is it?
+
+A simple data pipeline.  Starts a scanner (or multiple) which reads environmental data (temperature, accellerometer).
+The scanner hands decoded but unprocessed readings to an analyzer, which decides if they are interesting enough to do anything with
+The analyzer hands to a publisher (and could also trigger other events)
+The publisher writes readings to stdout and the cloud.
+
+
 ## Usage
 
 ```bash
@@ -12,7 +20,7 @@ sudo -e FBeacon
 or
 
 ```bash
-go run main.go
+sudo go run main.go
 ```
 
 from this directory.

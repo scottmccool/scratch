@@ -1,39 +1,20 @@
 package hub
 
 import (
-	"fmt"
+	"github.com/scottmccool/FBeacon/readings"
 	"log"
 	"time"
 )
-
-// FBeacon - a Fujitsu tag
-type FBeacon struct {
-	temp         float32
-	xAcc         float32
-	yAcc         float32
-	zAcc         float32
-	addr         string
-	txPowerLevel int
-	rssi         int
-	rawMfrData   string
-	timestamp    time.Time
-}
-
-// stringer for observations
-func (o FBeacon) String() string {
-	// metadata, Temp:value, Acc:value
-	return fmt.Sprintf("(%v):[%v](%v), Temp: %v, Acc: (%v, %v, %v)", o.timestamp.Format(time.Stamp), o.addr, o.rssi, o.temp, o.xAcc, o.yAcc, o.zAcc)
-}
 
 // How frequently we sniff and publish sensor packets
 const analyzeMinBatchSize = 1        // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
 const pubFrequency = 1 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
 
 // Rawc channel for sniffer to analzyer communications
-var Rawc = make(chan FBeacon, 1000)
+var Rawc = make(chan readings.FBeacon, 1000)
 
 // Analyzedc channel for analyzer to publisher communications
-var Analyzedc = make(chan FBeacon, 50)
+var Analyzedc = make(chan readings.FBeacon, 50)
 
 // Start Manage three worker routines (scanner, analyzer, publisher)
 func Start() {

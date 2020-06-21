@@ -1,5 +1,9 @@
 package hub
 
+import (
+	"github.com/scottmccool/FBeacon/readings"
+)
+
 // Analyzes batches of readings
 // May perform event detection (occupancy) or filtering
 // For now just pass through, we will practice batching in publish
@@ -12,12 +16,12 @@ func Analyze() {
 	}
 
 	// Read all available data
-	var readings []FBeacon
+	var obs []readings.FBeacon
 forLoop:
 	for {
 		select {
-		case obs := <-Rawc:
-			readings = append(readings, obs)
+		case o := <-Rawc:
+			obs = append(obs, o)
 		default:
 			break forLoop
 		}
@@ -26,7 +30,7 @@ forLoop:
 	// Analyze them (nothing implemented!)
 
 	// Publish them
-	for reading := range readings {
-		Analyzedc <- readings[reading]
+	for o := range obs {
+		Analyzedc <- obs[o]
 	}
 }
