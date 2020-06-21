@@ -14,6 +14,7 @@ package hub
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -35,7 +36,7 @@ func ScanFuji() {
 	}
 
 	// Register handlers.
-	d.Handle(gatt.PeripheralDiscovered(makeFujiTag))
+	d.Handle(gatt.PeripheralDiscovered(sniffFujiTag))
 	d.Init(onStateChanged)
 	select {}
 }
@@ -52,6 +53,21 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 	}
 }
 
+// sniffFujiTag Handler to gatt discovery, see if the BLE reading is one of interest and return a measurement if possible
+func sniffFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+	hexMfr := hex.EncodeToString(a.ManufacturerData)
+	beacon, err := extractFujiTag(hexMfr)
+	if err != nil {
+		return
+	}
+	beacon.BtData.Addr = p.ID()
+	beacon.BtData.Rssi = rssi
+	beacon.BtData.RawMfrData = hexMfr
+	beacon.BtData.TxPowerLevel = a.TxPowerLevel
+	Rawc <- beacon // Publish to channel for analysis by rest of hub; we are done
+
+}
+
 //We care about adv type 255 manufacturer data, the following regex from python code shows format
 //PACKET_DATA_REGEX = re.compile(r'010003000300(?P<temperature>.{4})(?P<x_acc>.{4})(?P<y_acc>.{4})(?P<z_acc>.{4})$')
 // Bytes need flipped
@@ -59,24 +75,21 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 //   So: hex_temp=c401 raw, flip the bytes to 01c4, cast it to an int16 (return 2^^16-val if exceeds), then do the math above results in t_f=72.2368
 // Acc formula from fuji: _unpack_value(_flip_bytes(hex_accel)) / 2048.0
 // makeFujiTag() Builds a FBeacon object with decoded data from a tag.  Writes it to channel.
-func makeFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+func extractFujiTag(hexMfr string) (beacon readings.FBeacon, err error) {
 	re := regexp.MustCompile(`010003000300(?P<temperature>.{4})(?P<x_acc>.{4})(?P<y_acc>.{4})(?P<z_acc>.{4})$`)
-	hexMfr := hex.EncodeToString(a.ManufacturerData)
 	pkt := re.FindStringSubmatch(hexMfr)
 	if len(pkt) == 5 { // 0 always empty
-		var beacon readings.FBeacon
 		beacon.Timestamp = time.Now()
-		beacon.BtData.Addr = p.ID()
-		beacon.BtData.Rssi = rssi
-		beacon.BtData.RawMfrData = hexMfr
-		beacon.BtData.TxPowerLevel = a.TxPowerLevel
 		beacon.Measurements.Temp = calcTemp(fujiHexToUInt(pkt[1]))
 		beacon.Measurements.XAcc = calcAcc(fujiHexToUInt(pkt[2]))
 		beacon.Measurements.YAcc = calcAcc(fujiHexToUInt(pkt[3]))
 		beacon.Measurements.ZAcc = calcAcc(fujiHexToUInt(pkt[4]))
-
-		Rawc <- beacon // Publish to channel for analysis by rest of hub logic, we're done
+		//j, _ := json.Marshal(beacon)
+		//fmt.Printf("--Input: %v\n--Output: %v\n", hexMfr, string(j))
+	} else {
+		err = errors.New("Does not contain Fujitsu beacon data")
 	}
+	return beacon, err
 }
 
 // Turn a 4 byte hex string from the advertisement to a float32
@@ -94,7 +107,7 @@ func fujiHexToUInt(hval string) uint16 {
 	flippedS := strings.Join(flipped, "")
 	hFlipped, _ := hex.DecodeString(flippedS)
 	rv := binary.BigEndian.Uint16(hFlipped)
-	//fmt.Printf("RV: %v from Flipped %v(%v) to %v(%v)\n", rv, hval, orig_bytes, flipped_s, h_flipped)
+	//fmt.Printf("--Hex flipper, string: %v flipped to int: %v\n", hval, rv)
 	return rv
 }
 

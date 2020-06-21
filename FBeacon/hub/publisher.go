@@ -17,7 +17,7 @@ func Publish() {
 			if err != nil {
 				fmt.Println("Cannot publish:", obs)
 			} else {
-				fmt.Printf(string(j))
+				fmt.Println(string(j))
 			}
 		default:
 			return
