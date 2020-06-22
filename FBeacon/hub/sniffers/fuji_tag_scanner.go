@@ -1,4 +1,4 @@
-package hub
+package sniffers
 
 // Includes logic to activate BLE and snatch fujitsu tag readings from the air.
 // Runs as it's own routine from hub.go and uses an exported channel to send readings to analysis routine.
@@ -27,9 +27,11 @@ import (
 	"github.com/paypal/gatt/examples/option"
 )
 
+// Raw observations from bluetooth scanner
+var SniffedObservations = make(chan readings.FBeacon, 1000)
+
 // ScanFuji - Scan BTLE for a Fujitsu beacon, return it as a payload.  Entrypoint.
 func ScanFuji() {
-	//	return "Mock-reading"
 	d, err := gatt.NewDevice(option.DefaultClientOptions...)
 	if err != nil {
 		log.Fatalf("Failed to open device, err: %s\n", err)
@@ -64,8 +66,8 @@ func sniffFujiTag(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	beacon.BtData.Rssi = rssi
 	beacon.BtData.RawMfrData = hexMfr
 	beacon.BtData.TxPowerLevel = a.TxPowerLevel
-	Rawc <- beacon // Publish to channel for analysis by rest of hub; we are done
-
+	//fmt.Println(beacon)
+	SniffedObservations <- beacon
 }
 
 //We care about adv type 255 manufacturer data, the following regex from python code shows format

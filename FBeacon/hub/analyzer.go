@@ -1,17 +1,19 @@
 package hub
 
 import (
+	"github.com/scottmccool/FBeacon/hub/sniffers"
 	"github.com/scottmccool/FBeacon/readings"
 )
 
 // Analyzes batches of readings
 // May perform event detection (occupancy) or filtering
 // For now just pass through, we will practice batching in publish
+var AnalyzedReadings = make(chan readings.FBeacon, 1000)
 
 // Analyze read from chan Rawc once analyzeMinBatchSize readings are available, filters (not done) and passes to publisher channel
 func Analyze() {
 	//log.Printf("Beginning analysis (Rawc: %v)\n", len(Rawc))
-	if len(Rawc) < analyzeMinBatchSize {
+	if len(sniffers.SniffedObservations) < analyzeMinBatchSize {
 		return // Not enough readings to analyze, try again later
 	}
 
@@ -20,7 +22,7 @@ func Analyze() {
 forLoop:
 	for {
 		select {
-		case o := <-Rawc:
+		case o := <-sniffers.SniffedObservations:
 			obs = append(obs, o)
 		default:
 			break forLoop
@@ -31,6 +33,6 @@ forLoop:
 
 	// Publish them
 	for o := range obs {
-		Analyzedc <- obs[o]
+		AnalyzedReadings <- obs[o]
 	}
 }

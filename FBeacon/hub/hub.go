@@ -4,18 +4,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/scottmccool/FBeacon/readings"
+	"github.com/scottmccool/FBeacon/hub/sniffers"
 )
 
 // How frequently we sniff and publish sensor packets
-const analyzeMinBatchSize = 2        // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
-const pubFrequency = 5 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
-const pubMinBatchSize = 2            // Wait to accumulate MinBatchSize before publishing
-// Rawc channel for sniffer to analzyer communications
-var Rawc = make(chan readings.FBeacon, 1000)
-
-// Analyzedc channel for analyzer to publisher communications
-var Analyzedc = make(chan readings.FBeacon, 50)
+const analyzeMinBatchSize = 2         // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
+const pubFrequency = 10 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
+const pubMinBatchSize = 10            // Wait to accumulate MinBatchSize before publishing
+const analyzeFrequency = 5 * time.Second
 
 // Start Manage three worker routines (scanner, analyzer, publisher)
 func Start() {
@@ -31,17 +27,11 @@ func Start() {
 
 	// And another to read from scanner and do on-hub processing before publish, once a second
 	go func() {
-		for now := range time.Tick(1 * time.Second) {
+		for now := range time.Tick(analyzeFrequency) {
 			_ = now
 			Analyze()
 		}
 	}()
 
-	// main thread scans for packets which it'll pass to analyzer
-	go func() {
-		for {
-			ScanFuji() // Activate bluetooth for scanT time
-		}
-	}()
-	select {} // block forever
+	sniffers.ScanFuji() // Run forever.
 }

@@ -3,45 +3,34 @@ package hub
 // Publish analyzed readings to the cloud
 
 import (
-	"encoding/json"
-	"fmt"
-
+	"github.com/scottmccool/FBeacon/hub/publishers"
 	"github.com/scottmccool/FBeacon/readings"
 )
 
-// Publish Reads from chan Analyzedc and publishes off hub (well, to stdout)
+// Publish Reads from chan Analyzedc and publishes off hub (well, to a set of publishers also managed here
+// This needs refactored for real world use, stop recreating clients to external services so often
 func Publish() (published int, err error) {
-	if len(Analyzedc) < pubMinBatchSize {
+	if len(AnalyzedReadings) < pubMinBatchSize {
 		return 0, nil
 	}
+	// Spin up publishers
+	pnChan := make(chan readings.FBeacon, len(AnalyzedReadings))
+	loggerChan := make(chan readings.FBeacon, len(AnalyzedReadings))
+	go publishers.PublishPubNub(pnChan)
+	go publishers.PublishLog(loggerChan)
+
 	var observations []readings.FBeacon
 	for len(observations) < pubMinBatchSize {
 		select {
-		case obs := <-Analyzedc:
+		case obs := <-AnalyzedReadings:
 			observations = append(observations, obs)
 		}
 	}
 
-	gcloudErr := publishToGcloud(observations)
-	stdoutErr := publishToStdOut(observations)
+	for _, obs := range observations {
+		pnChan <- obs
+		loggerChan <- obs
+	}
 
-	if gcloudErr != nil {
-		return len(observations), gcloudErr
-	}
-	if stdoutErr != nil {
-		return len(observations), stdoutErr
-	}
 	return len(observations), nil
-}
-
-func publishToStdOut(observations []readings.FBeacon) error {
-	//	fmt.Println(observations)
-	for o := range observations {
-		s, err := json.Marshal(observations[o])
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(s))
-	}
-	return nil
 }
