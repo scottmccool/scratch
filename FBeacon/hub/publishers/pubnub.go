@@ -1,10 +1,9 @@
 package publishers
 
 // Publish readings to PubNub
-// PoC
+// TODO: This is a PoC, no error handling or cleanup is done at all
 
 import (
-	"fmt"
 	"os"
 
 	pubnub "github.com/pubnub/go"
@@ -34,7 +33,8 @@ func PublishPubNub(pnChan chan readings.FBeacon) {
 				Channel(pnChannelName).
 				Message(obs).
 				Execute()
-			fmt.Printf("Pubblished to [[%v]]  (Res: [[%v]]) (Status: [[%v]]) (Err: [[%v]])\n", pnChannelName, *res, status, err)
+			_, _, _ = res, status, err
+			//fmt.Printf("Pubblished to [[%v]]  (Res: [[%v]]) (Status: [[%v]]) (Err: [[%v]])\n", pnChannelName, *res, status, err)
 		}
 	}
 }

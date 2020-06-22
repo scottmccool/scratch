@@ -4,24 +4,29 @@ import (
 	"log"
 	"time"
 
+	"github.com/scottmccool/FBeacon/hub/analyzers"
+	"github.com/scottmccool/FBeacon/hub/publishers"
 	"github.com/scottmccool/FBeacon/hub/sniffers"
 )
 
 // How frequently we sniff and publish sensor packets
-const analyzeMinBatchSize = 2         // Get this many readings from sniffer before analyzing (batch size for on hub analysis, can use to batch publishes too)
 const pubFrequency = 10 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
-const pubMinBatchSize = 10            // Wait to accumulate MinBatchSize before publishing
-const analyzeFrequency = 5 * time.Second
+const analyzeFrequency = 1 * time.Second
 
 // Start Manage three worker routines (scanner, analyzer, publisher)
 func Start() {
-	log.Printf("Scanning for Fuji sensor tags; analyzing in batches of %v and publishing (printing) every %v\n", analyzeMinBatchSize, pubFrequency)
+	log.Printf("Starting collector software, looking for Fujitsu BLE beacons.")
 
 	// Start a routine to publish analyzed readings
 	go func() {
 		for now := range time.Tick(pubFrequency) {
 			_ = now
-			Publish()
+			_, err := publishers.Publish()
+			if err != nil {
+				//fmt.Println("Swallowing publihs error(s): ", err)
+			} else {
+				//fmt.Println("Published ", published, " observations")
+			}
 		}
 	}()
 
@@ -29,7 +34,13 @@ func Start() {
 	go func() {
 		for now := range time.Tick(analyzeFrequency) {
 			_ = now
-			Analyze()
+			_, err := analyzers.Analyze()
+			if err != nil {
+				//fmt.Println("Swallowing analysis error(s): ", err)
+			} else {
+				//fmt.Println("Analyzed ", analyzed, " observations")
+			}
+
 		}
 	}()
 

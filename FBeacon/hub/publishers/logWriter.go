@@ -11,6 +11,8 @@ func PublishLog(c chan readings.FBeacon) {
 		select {
 		case obs := <-c:
 			fmt.Println(obs)
+		default:
+			return
 		}
 	}
 }
