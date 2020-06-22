@@ -15,8 +15,8 @@ const pnChannelName = "FBeacon"
 
 func PublishPubNub(pnChan chan readings.FBeacon) {
 	config := pubnub.NewConfig()
-	config.PublishKey = "pub-c-1dadcdf6-f319-4eac-9d81-32ac076c6791"
-	config.SubscribeKey = "sub-c-d8802764-b439-11ea-afa6-debb908608d9"
+	config.PublishKey = "pub-c-c7313055-d589-4a18-8bc3-2bc0a21d3b20"
+	config.SubscribeKey = "sub-c-bd5d7130-b4a7-11ea-afa6-debb908608d9"
 	hn, err := os.Hostname()
 	if err != nil {
 		config.UUID = "unknown-hub"

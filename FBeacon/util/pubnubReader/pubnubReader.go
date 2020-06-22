@@ -10,8 +10,8 @@ import (
 func main() {
 	// Initialize pn
 	config := pubnub.NewConfig()
-	config.PublishKey = "pub-c-1dadcdf6-f319-4eac-9d81-32ac076c6791"
-	config.SubscribeKey = "sub-c-d8802764-b439-11ea-afa6-debb908608d9"
+	config.PublishKey = "pub-c-c7313055-d589-4a18-8bc3-2bc0a21d3b20"
+	config.SubscribeKey = "sub-c-bd5d7130-b4a7-11ea-afa6-debb908608d9"
 	hn, err := os.Hostname()
 	if err != nil {
 		config.UUID = "unknown-hub"
@@ -92,12 +92,17 @@ func main() {
 	}()
 
 	// Add subscriber
-	pn.Subscribe().
-		Channels([]string{"FBeacon"}). // subscribe to channels
-		Execute()
+	// pn.Subscribe().
+	// 	Channels([]string{"FBeacon"}). // subscribe to channels
+	// 	Execute()
 
 	res, status, err := pn.Time().Execute()
 	fmt.Println(res, status, err)
+	hres, hstatus, herr := pn.History().
+		Channel("FBeacon"). // where to fetch history from
+		Count(10).          // how many items to fetch
+		Execute()
 
-	select {}
+	fmt.Println(hres, hstatus, herr)
+	//	select {}
 }
