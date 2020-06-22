@@ -2,11 +2,11 @@
 
 ## What is it?
 
-A simple data pipeline.  Starts a scanner (or multiple) which reads environmental data (temperature, accellerometer).
-The scanner hands decoded but unprocessed readings to an analyzer, which decides if they are interesting enough to do anything with
-The analyzer hands to a publisher (and could also trigger other events)
-The publisher writes readings to stdout and the cloud.
+A simple data pipeline intended to run on a Raspberry Pi with BLE.
 
+It looks for Fujitsu beacons containing environmental data, translates the data, filters it, and publishes readings.
+
+Uses goroutines for concurrency, supports multiple scanners, analyzers, and publishers
 
 ## Usage
 

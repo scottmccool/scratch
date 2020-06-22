@@ -8,6 +8,7 @@ import (
 // Analyzes batches of readings
 // May perform event detection (occupancy) or filtering
 // TODO: At least dedupe!
+// TODO: Defer close until any child analyzers are done
 // For now just pass through, we will practice batching in publish
 const analyzeMinBatchSize = 5
 

@@ -9,6 +9,8 @@ import (
 
 const pubMinBatchSize = 10
 
+// TODO: Defer close until any child publishers are done
+
 // Publish Reads from chan Analyzedc and publishes off hub (well, to a set of publishers also managed here
 // This needs refactored for real world use, stop recreating clients to external services so often
 func Publish() (published int, err error) {
