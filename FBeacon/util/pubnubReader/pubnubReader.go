@@ -1,13 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	pubnub "github.com/pubnub/go"
 )
 
-func main() {
+func readFromPubNub(numMessagesToRetrieve int) {
 	// Initialize pn
 	config := pubnub.NewConfig()
 	config.PublishKey = "pub-c-c7313055-d589-4a18-8bc3-2bc0a21d3b20"
@@ -96,13 +98,23 @@ func main() {
 	// 	Channels([]string{"FBeacon"}). // subscribe to channels
 	// 	Execute()
 
-	res, status, err := pn.Time().Execute()
-	fmt.Println(res, status, err)
-	hres, hstatus, herr := pn.History().
-		Channel("FBeacon"). // where to fetch history from
-		Count(10).          // how many items to fetch
+	hres, _, _ := pn.History().
+		Channel("FBeacon").           // where to fetch history from
+		Count(numMessagesToRetrieve). // how many items to fetch
 		Execute()
 
-	fmt.Println(hres, hstatus, herr)
-	//	select {}
+	//fmt.Printf("Status: %v (Err: %v)\nResponse:\n----\n%v\n----\n\n\n", hstatus, herr, hres)
+	for _, obs := range hres.Messages {
+		o, _ := json.MarshalIndent(obs, "", "  ")
+		fmt.Println(string(o))
+	}
+}
+
+func main() {
+	numMessagesToRetrieve := 1
+	if len(os.Args) == 2 {
+		numMessagesToRetrieve, _ = strconv.Atoi(os.Args[1])
+	}
+	fmt.Printf("Attempting to retrieve %v messages from FBeacon channel\n", numMessagesToRetrieve)
+	readFromPubNub(numMessagesToRetrieve)
 }
