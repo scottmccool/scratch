@@ -10,7 +10,7 @@ import (
 )
 
 // How frequently we sniff and publish sensor packets
-const pubFrequency = 10 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
+const publishFrequency = 10 * time.Second // Publish everything off hub this frequently (analysis will write to the analyzed channel this reads from)
 const analyzeFrequency = 1 * time.Second
 
 // Start Manage three worker routines (scanner, analyzer, publisher)
@@ -19,7 +19,7 @@ func Start() {
 
 	// Start a routine to publish analyzed readings
 	go func() {
-		for now := range time.Tick(pubFrequency) {
+		for now := range time.Tick(publishFrequency) {
 			_ = now
 			_, err := publishers.Publish()
 			if err != nil {
